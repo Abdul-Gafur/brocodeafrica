@@ -152,7 +152,7 @@ export default function AboutPage() {
           {IMPACT_STATS.map((stat, index) => (
             <div
               key={stat.label}
-              className={`relative rounded-[32px] p-8 flex flex-col gap-2 overflow-hidden border ${
+              className={`relative rounded-[32px] p-6 md:p-8 flex flex-col justify-center items-center text-center gap-2 overflow-hidden border ${
                 index === 0
                   ? "bg-[#ebc249] border-transparent shadow-[0px_20px_25px_-5px_rgba(235,194,73,0.1),0px_8px_10px_-6px_rgba(235,194,73,0.1)]"
                   : "bg-[#201f1f] border-[rgba(77,70,53,0.1)]"

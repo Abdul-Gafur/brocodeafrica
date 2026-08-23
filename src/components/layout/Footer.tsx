@@ -53,7 +53,7 @@ export default function Footer() {
           <h3 className="font-bold text-[#ebc249] text-lg leading-7">Contact</h3>
           <div className="flex gap-2 items-center text-[#99907c] text-sm leading-5">
             <MailIcon />
-            <span>hello@brocode.africa</span>
+            <span>hello@brocodeafrica.org</span>
           </div>
           <div className="flex gap-2 items-center text-[#99907c] text-sm leading-5">
             <PinIcon />
