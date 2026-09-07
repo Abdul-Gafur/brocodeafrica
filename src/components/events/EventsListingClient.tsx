@@ -93,12 +93,24 @@ function EventCard({ event }: { event: EventItem }) {
             {event.location}
           </div>
         )}
-        <Link
-          href={`/events/${event.id}`}
-          className="flex items-center justify-center py-4 rounded-2xl bg-[#353534] font-geist font-black text-[16px] text-[#e5e2e1]"
-        >
-          Register Now
-        </Link>
+        <div className="flex flex-col gap-2">
+          <Link
+            href={`/events/${event.id}`}
+            className="flex items-center justify-center py-4 rounded-2xl bg-[#353534] font-geist font-black text-[16px] text-[#e5e2e1]"
+          >
+            View Details
+          </Link>
+          {event.registrationUrl && event.isRegistrationOpen !== false && (
+            <a
+              href={event.registrationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center py-4 rounded-2xl bg-[#ebc249] font-geist font-black text-[16px] text-[#3d2e00]"
+            >
+              Register Now
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );

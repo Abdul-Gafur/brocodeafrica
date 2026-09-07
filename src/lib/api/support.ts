@@ -1,29 +1,42 @@
-import { CoordinatorRequest, CoordinatorRequestResult, FaqItem, SupportChannel } from "@/lib/types/support";
-import { MOCK_SUPPORT_CHANNELS, MOCK_SUPPORT_FAQS } from "@/lib/data/support";
-
-/** Swap for `apiFetch<SupportChannel[]>("/support/channels")` once the backend exists. */
-export async function getSupportChannels(): Promise<SupportChannel[]> {
-  return MOCK_SUPPORT_CHANNELS;
-}
-
-/** Swap for `apiFetch<FaqItem[]>("/support/faqs")` once the backend exists. */
-export async function getSupportFaqs(): Promise<FaqItem[]> {
-  return MOCK_SUPPORT_FAQS;
-}
+import {
+  CoordinatorRequest,
+  CoordinatorRequestResult,
+  FaqItem,
+  SupportChannel,
+} from "@/lib/types/support";
+import { apiFetch } from "@/lib/api/client";
 
 /**
- * Stubbed submit handler for the "Talk to a Coordinator" form.
- * TODO: swap for `apiFetch<CoordinatorRequestResult>("/support/coordinator-requests", { method: "POST", body: JSON.stringify(payload) })`
- * once the backend endpoint exists.
+ * Real API calls for Support (3.4).
+ *
+ * `/support/channels` and `/support/faqs` are non-paginated collections
+ * wrapped as { data: [...] }. `submitCoordinatorRequest` POSTs the "Talk to a
+ * Coordinator" form to `/support/tickets` and returns { success, ticketId,
+ * message } straight through.
  */
+
+const REVALIDATE = 300;
+
+export async function getSupportChannels(): Promise<SupportChannel[]> {
+  const { data } = await apiFetch<{ data: SupportChannel[] }>(
+    "/support/channels",
+    { next: { revalidate: REVALIDATE } }
+  );
+  return data;
+}
+
+export async function getSupportFaqs(): Promise<FaqItem[]> {
+  const { data } = await apiFetch<{ data: FaqItem[] }>("/support/faqs", {
+    next: { revalidate: REVALIDATE },
+  });
+  return data;
+}
+
 export async function submitCoordinatorRequest(
   payload: CoordinatorRequest
 ): Promise<CoordinatorRequestResult> {
-  await new Promise((resolve) => setTimeout(resolve, 900));
-
-  return {
-    success: true,
-    ticketId: `BC-${Math.floor(100000 + Math.random() * 900000)}`,
-    message: "Thanks — a coordinator will reach out to you shortly.",
-  };
+  return apiFetch<CoordinatorRequestResult>("/support/tickets", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }

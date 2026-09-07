@@ -79,26 +79,18 @@ export default async function ProductDetailPage({
               </p>
 
               <div className="flex flex-col gap-3 pt-4">
-                <button
-                  type="button"
-                  disabled
-                  title="Checkout requires the backend to be connected."
-                  className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#353534] font-geist font-black text-[16px] text-[rgba(229,226,225,0.4)] cursor-not-allowed"
+                <a
+                  href={product.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#ebc249] font-geist font-black text-[16px] text-[#3d2e00] shadow-[0px_10px_15px_-3px_rgba(235,194,73,0.2),0px_4px_6px_-4px_rgba(235,194,73,0.2)]"
                 >
                   <CartIcon />
-                  Add to Cart
-                </button>
-                <button
-                  type="button"
-                  disabled
-                  title="Checkout requires the backend to be connected."
-                  className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-[rgba(235,194,73,0.3)] font-geist font-black text-[16px] text-[rgba(61,46,0,0.6)] cursor-not-allowed"
-                >
-                  Buy Now
-                </button>
+                  Buy on WhatsApp
+                </a>
                 <p className="text-xs text-center text-[rgba(229,226,225,0.4)]">
-                  Checkout is not yet available — this marketplace is a preview ahead of backend
-                  integration.
+                  Orders are completed over WhatsApp with our team. A full on-site cart is on the
+                  way.
                 </p>
               </div>
             </div>

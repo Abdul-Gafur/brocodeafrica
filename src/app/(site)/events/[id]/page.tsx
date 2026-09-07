@@ -100,9 +100,13 @@ export default async function EventDetailPage({
               )}
 
               <div className="pt-2">
-                <RegisterButton />
+                <RegisterButton
+                  registrationUrl={event.registrationUrl}
+                  isRegistrationOpen={event.isRegistrationOpen}
+                  className="flex items-center justify-center gap-2 w-full px-8 py-[16px] rounded-2xl font-geist font-black text-[16px]"
+                />
                 <p className="pt-3 text-xs text-[rgba(229,226,225,0.4)]">
-                  Registration opens once the Brocode backend is connected.
+                  You&apos;ll be taken to the event sign-up page in a new tab.
                 </p>
               </div>
             </div>

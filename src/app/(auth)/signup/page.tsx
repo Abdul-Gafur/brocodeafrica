@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { signup } from "@/lib/api/auth";
 import { EyeIcon, EyeOffIcon } from "@/components/auth/icons";
@@ -15,6 +16,7 @@ interface FormErrors {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -55,11 +57,16 @@ export default function SignUpPage() {
 
     setIsSubmitting(true);
     try {
-      await signup({ fullName, email, password });
-      // TODO: redirect to onboarding / authenticated area once backend + session handling exist
+      await signup({
+        fullName,
+        email,
+        password,
+        passwordConfirmation: confirmPassword,
+      });
+      router.push("/");
+      router.refresh();
     } catch {
-      setFormError("Something went wrong. Please try again.");
-    } finally {
+      setFormError("Could not create your account. This email may already be in use.");
       setIsSubmitting(false);
     }
   }

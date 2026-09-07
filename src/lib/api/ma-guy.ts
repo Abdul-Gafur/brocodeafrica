@@ -1,40 +1,51 @@
 import { ChatMessage } from "@/lib/types/ma-guy";
+import { apiFetch } from "@/lib/api/client";
 
 /**
- * Rotating canned replies used to simulate "Ma Guy" responses until the real
- * backend/LLM endpoint is wired up. Kept generic and supportive in tone to
- * match the assistant's role as a youth wellness/SRHR/finance guide.
+ * Real "Ma Guy" assistant calls (3.5).
+ *
+ * The server owns conversation history, so `history` is no longer sent — we
+ * just keep the `conversationId` it returns and echo it back on the next turn.
+ * A per-session id lets an anonymous visitor keep one thread and be
+ * rate-limited fairly. Response shape:
+ *   { conversationId: string, message: ChatMessage }
  */
-const CANNED_REPLIES = [
-  "I hear you. Can you tell me a bit more about what's going on so I can point you in the right direction?",
-  "Thanks for sharing that with me. Based on what you've said, it might help to connect with one of our support services — want me to pull up some resources?",
-  "You're not alone in this. A lot of people in the Brocode community have felt the same way. Let's take it one step at a time.",
-  "That's a great question. Let me break it down for you simply, and feel free to ask follow-ups anytime.",
-  "I want to make sure you get the right support. Is this something urgent, or are you looking for general guidance?",
-];
 
-let replyIndex = 0;
+let conversationId: string | null = null;
 
-/**
- * TODO: replace with real POST /chat call once the Ma Guy backend/LLM endpoint is available.
- * Currently simulates network latency and returns a rotating canned assistant reply.
- */
+let sessionId: string | null = null;
+
+function getSessionId(): string {
+  if (sessionId === null) {
+    sessionId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+  return sessionId;
+}
+
+interface SendMessageResponse {
+  conversationId: string;
+  message: ChatMessage;
+}
+
 export async function sendMessageToMaGuy(
   message: string,
   history: ChatMessage[]
 ): Promise<ChatMessage> {
-  await new Promise((resolve) => setTimeout(resolve, 600));
-
-  void message;
   void history;
 
-  const reply = CANNED_REPLIES[replyIndex % CANNED_REPLIES.length];
-  replyIndex += 1;
+  const res = await apiFetch<SendMessageResponse>("/ma-guy/messages", {
+    method: "POST",
+    headers: { "X-Session-Id": getSessionId() },
+    body: JSON.stringify({
+      message,
+      ...(conversationId ? { conversation_id: conversationId } : {}),
+    }),
+  });
 
-  return {
-    id: `assistant-${Date.now()}`,
-    role: "assistant",
-    content: reply,
-    timestamp: new Date().toISOString(),
-  };
+  conversationId = res.conversationId;
+
+  return res.message;
 }

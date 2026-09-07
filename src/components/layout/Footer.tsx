@@ -5,12 +5,12 @@ const COMPANY_LINKS = [
   { label: "About", href: "/about" },
   { label: "Services", href: "/services" },
   { label: "Support", href: "/support" },
+  { label: "Contact", href: "/contact" },
 ];
 
 const LEGAL_LINKS = [
-  { label: "Privacy Policy", href: "/legal/privacy" },
-  { label: "Terms of Service", href: "/legal/terms" },
-  { label: "Cookie Policy", href: "/legal/cookies" },
+  { label: "Privacy Policy", href: "/privacy-policy" },
+  { label: "Terms of Service", href: "/terms-of-service" },
 ];
 
 const SOCIAL_LINKS = [

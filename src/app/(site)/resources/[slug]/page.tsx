@@ -81,18 +81,19 @@ export default async function ResourceDetailPage({
             </p>
           )}
 
-          <div className="flex flex-col gap-6 text-[16px] leading-[28px] text-[rgba(229,226,225,0.6)]">
-            <p>
-              This is placeholder editorial content for &ldquo;{resource.title}&rdquo;. The full
-              article, course curriculum, or guide content will be wired up once the Brocode
-              Africa content backend is available.
-            </p>
-            <p>
-              In the meantime, this page demonstrates the layout and structure that real content
-              will occupy: a title, key metadata, a hero image, and a body of supporting
-              paragraphs.
-            </p>
-          </div>
+          {resource.body ? (
+            <div
+              className="resource-body flex flex-col gap-5 text-[16px] leading-[28px] text-[rgba(229,226,225,0.6)] [&_h2]:font-geist [&_h2]:font-black [&_h2]:text-[22px] [&_h2]:text-[#e5e2e1] [&_h2]:pt-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:flex [&_ul]:flex-col [&_ul]:gap-2 [&_a]:text-[#ebc249] [&_a]:underline [&_strong]:text-[#e5e2e1]"
+              dangerouslySetInnerHTML={{ __html: resource.body }}
+            />
+          ) : (
+            <div className="flex flex-col gap-6 text-[16px] leading-[28px] text-[rgba(229,226,225,0.6)]">
+              <p>
+                The full write-up for &ldquo;{resource.title}&rdquo; is being prepared. Check back
+                shortly, or reach out through Support if you need this resource sooner.
+              </p>
+            </div>
+          )}
 
           {isCourse && (
             <Link
@@ -103,14 +104,18 @@ export default async function ResourceDetailPage({
             </Link>
           )}
 
-          {isDownload && (
+          {isDownload && resource.downloadUrl && (
             <a
-              href={resource.image}
-              download
+              href={resource.downloadUrl}
               className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#ebc249] font-geist font-black text-[16px] text-[#3d2e00] w-fit px-10"
             >
               Download {resource.fileType}
             </a>
+          )}
+          {isDownload && !resource.downloadUrl && (
+            <p className="text-sm text-[rgba(229,226,225,0.5)]">
+              This file isn&apos;t available for download yet — check back soon.
+            </p>
           )}
         </div>
       </article>

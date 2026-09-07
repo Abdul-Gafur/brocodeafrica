@@ -2,34 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { getFeaturedResources } from "@/lib/api/resources";
 import { getUpcomingEvents } from "@/lib/api/events";
-
-const CORE_SERVICES = [
-  {
-    title: "Mental Health Support",
-    description:
-      "Confidential counseling and therapy sessions with professionals who understand the unique pressures of young adulthood.",
-    tags: ["ANXIETY", "STRESS", "IDENTITY"],
-    href: "/services/mental-health",
-    variant: "default" as const,
-  },
-  {
-    title: "SRHR Services",
-    description:
-      "Expert advice on sexual and reproductive health. Private consultations, digital prescriptions, and wellness trackers.",
-    tags: ["HEALTH", "ADVICE", "PRIVATE"],
-    href: "/services/srhr",
-    variant: "default" as const,
-  },
-  {
-    title: "Crisis Support",
-    description:
-      "Immediate intervention for urgent situations. Connect with a rapid response coordinator within 60 seconds.",
-    tags: ["IMMEDIATE", "EMERGENCY"],
-    href: "/support",
-    variant: "crisis" as const,
-    badge: "24/7 PRIORITY",
-  },
-];
+import { getCoreServices } from "@/lib/api/services";
+import ReferralButton from "@/components/services/ReferralButton";
 
 const JOURNEY_STEPS = [
   {
@@ -40,9 +14,10 @@ const JOURNEY_STEPS = [
 ];
 
 export default async function HomePage() {
-  const [events, resources] = await Promise.all([
+  const [events, resources, coreServices] = await Promise.all([
     getUpcomingEvents(3),
     getFeaturedResources(4),
+    getCoreServices(),
   ]);
 
   return (
@@ -124,9 +99,9 @@ export default async function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {CORE_SERVICES.map((service) => (
+            {coreServices.map((service) => (
               <div
-                key={service.title}
+                key={service.id}
                 className={`relative flex flex-col gap-4 p-8 rounded-[32px] shadow-[0px_10px_30px_0px_rgba(0,0,0,0.5),0px_4px_12px_0px_rgba(235,194,73,0.04)] border ${
                   service.variant === "crisis"
                     ? "bg-[#201f1f] border-[rgba(235,194,73,0.2)]"
@@ -165,13 +140,24 @@ export default async function HomePage() {
                     </span>
                   ))}
                 </div>
-                <Link
-                  href={service.href}
-                  className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#ebc249] font-geist font-black text-[16px] text-[#3d2e00]"
-                >
-                  Get Help
-                  <ArrowRightIcon />
-                </Link>
+                {service.referralUrl ? (
+                  <ReferralButton
+                    referralUrl={service.referralUrl}
+                    partnerName={service.partnerName}
+                    className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#ebc249] font-geist font-black text-[16px] text-[#3d2e00] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    Get Help
+                    <ArrowRightIcon />
+                  </ReferralButton>
+                ) : (
+                  <Link
+                    href={service.href}
+                    className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#ebc249] font-geist font-black text-[16px] text-[#3d2e00]"
+                  >
+                    Get Help
+                    <ArrowRightIcon />
+                  </Link>
+                )}
               </div>
             ))}
           </div>
@@ -222,7 +208,7 @@ export default async function HomePage() {
                     href={`/events/${event.id}`}
                     className="flex items-center justify-center py-4 rounded-2xl bg-[#353534] font-geist font-black text-[16px] text-[#e5e2e1]"
                   >
-                    Register Now
+                    View Details
                   </Link>
                 </div>
               </div>

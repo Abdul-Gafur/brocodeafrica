@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { login } from "@/lib/api/auth";
 import { ArrowRightIcon, EyeIcon, EyeOffIcon } from "@/components/auth/icons";
@@ -14,6 +15,7 @@ interface FormErrors {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -43,10 +45,10 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await login({ email, password });
-      // TODO: redirect to authenticated area once backend + session handling exist
+      router.push("/");
+      router.refresh();
     } catch {
-      setFormError("Something went wrong. Please try again.");
-    } finally {
+      setFormError("Invalid email or password. Please try again.");
       setIsSubmitting(false);
     }
   }

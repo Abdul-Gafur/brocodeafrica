@@ -19,11 +19,15 @@ export interface ResourceItem {
   filters?: ResourceFilter[];
   author?: string;
   publishedAt?: string;
+  /** Full article/course body as HTML, sent only on the detail endpoint. */
+  body?: string;
   /** Course-only fields */
-  courseTags?: [string, string];
+  courseTags?: string[];
   duration?: string;
   price?: string;
   /** Download-only fields */
   fileType?: string;
   fileSize?: string;
+  /** Tracked, gated download endpoint — present only when a file is attached. */
+  downloadUrl?: string;
 }

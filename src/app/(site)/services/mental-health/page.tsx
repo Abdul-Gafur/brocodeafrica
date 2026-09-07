@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getCoreServiceBySlug } from "@/lib/api/services";
+import ReferralButton from "@/components/services/ReferralButton";
 
 const FEATURES = [
   {
@@ -72,7 +74,10 @@ const REASSURANCES = [
   },
 ];
 
-export default function MentalHealthPage() {
+export default async function MentalHealthPage() {
+  const service = await getCoreServiceBySlug("mental-health");
+  const referralUrl = service?.referralUrl;
+  const partnerName = service?.partnerName;
   return (
     <div className="flex flex-col items-center w-full">
       {/* Hero */}
@@ -93,16 +98,30 @@ export default function MentalHealthPage() {
               everything in between. No stigma. No judgment. Just support.
             </p>
             <div className="flex flex-wrap gap-4 pt-4">
-              <Link
-                href="/support"
-                className="flex items-center justify-center px-8 py-[17px] rounded-lg font-geist font-black text-[18px] text-[#3d2e00] shadow-[0px_10px_15px_-3px_rgba(235,194,73,0.2),0px_4px_6px_-4px_rgba(235,194,73,0.2)]"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(135deg, rgb(203, 164, 45) 0%, rgb(166, 133, 37) 100%)",
-                }}
-              >
-                Talk to a Counselor
-              </Link>
+              {referralUrl ? (
+                <ReferralButton
+                  referralUrl={referralUrl}
+                  partnerName={partnerName}
+                  className="flex items-center justify-center px-8 py-[17px] rounded-lg font-geist font-black text-[18px] text-[#3d2e00] shadow-[0px_10px_15px_-3px_rgba(235,194,73,0.2),0px_4px_6px_-4px_rgba(235,194,73,0.2)] disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(135deg, rgb(203, 164, 45) 0%, rgb(166, 133, 37) 100%)",
+                  }}
+                >
+                  Talk to a Counselor
+                </ReferralButton>
+              ) : (
+                <Link
+                  href="/support"
+                  className="flex items-center justify-center px-8 py-[17px] rounded-lg font-geist font-black text-[18px] text-[#3d2e00] shadow-[0px_10px_15px_-3px_rgba(235,194,73,0.2),0px_4px_6px_-4px_rgba(235,194,73,0.2)]"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(135deg, rgb(203, 164, 45) 0%, rgb(166, 133, 37) 100%)",
+                  }}
+                >
+                  Talk to a Counselor
+                </Link>
+              )}
               <Link
                 href="/ma-guy"
                 className="flex items-center justify-center px-8 py-[17px] rounded-lg font-geist font-black text-[18px] text-[#ebc249] bg-[#353534] border border-[rgba(235,194,73,0.2)]"
@@ -279,15 +298,27 @@ export default function MentalHealthPage() {
               whenever you&apos;re ready.
             </p>
             <div className="flex flex-col items-center gap-3 pt-6">
-              <button
-                type="button"
-                disabled
-                className="flex items-center justify-center px-8 py-[18px] rounded-2xl font-geist font-black text-[16px] text-[#3d2e00] bg-[#ebc249] opacity-60 cursor-not-allowed shadow-[0px_20px_25px_-5px_rgba(235,194,73,0.2),0px_8px_10px_-6px_rgba(235,194,73,0.2)]"
-              >
-                Book a Session
-              </button>
+              {referralUrl ? (
+                <ReferralButton
+                  referralUrl={referralUrl}
+                  partnerName={partnerName}
+                  className="flex items-center justify-center px-8 py-[18px] rounded-2xl font-geist font-black text-[16px] text-[#3d2e00] bg-[#ebc249] shadow-[0px_20px_25px_-5px_rgba(235,194,73,0.2),0px_8px_10px_-6px_rgba(235,194,73,0.2)] disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  Book a Session
+                </ReferralButton>
+              ) : (
+                <Link
+                  href="/support"
+                  className="flex items-center justify-center px-8 py-[18px] rounded-2xl font-geist font-black text-[16px] text-[#3d2e00] bg-[#ebc249] shadow-[0px_20px_25px_-5px_rgba(235,194,73,0.2),0px_8px_10px_-6px_rgba(235,194,73,0.2)]"
+                >
+                  Book a Session
+                </Link>
+              )}
               <span className="text-[13px] text-[rgba(229,226,225,0.4)]">
-                Coming soon — pending backend integration. In crisis?{" "}
+                {partnerName
+                  ? `You'll be taken to our partner, ${partnerName}.`
+                  : "Confidential and judgment-free."}{" "}
+                In crisis?{" "}
                 <Link href="/support" className="text-[#ebc249] underline">
                   Get immediate help
                 </Link>

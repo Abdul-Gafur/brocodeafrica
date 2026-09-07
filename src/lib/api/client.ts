@@ -11,11 +11,19 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+/** RequestInit plus the Next.js server-fetch caching extensions we use. */
+export type ApiFetchInit = RequestInit & {
+  next?: { revalidate?: number | false; tags?: string[] };
+};
+
+export async function apiFetch<T>(path: string, init?: ApiFetchInit): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
+      // Laravel keys `expectsJson()` off Accept — send it so validation
+      // errors come back as 422 JSON rather than an HTML redirect.
+      Accept: "application/json",
       ...init?.headers,
     },
   });

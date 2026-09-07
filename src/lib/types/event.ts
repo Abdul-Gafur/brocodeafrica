@@ -23,4 +23,11 @@ export interface EventItem {
   fullDescription?: string;
   /** Bullet points describing what attendees can expect */
   highlights?: string[];
+  /** ISO 8601 start/end timestamps */
+  startsAt?: string;
+  endsAt?: string;
+  /** Whether sign-ups are currently open */
+  isRegistrationOpen?: boolean;
+  /** External sign-up link the "Register" button sends attendees to */
+  registrationUrl?: string;
 }

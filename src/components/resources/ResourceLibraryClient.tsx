@@ -264,14 +264,23 @@ function DownloadItem({ resource }: { resource: ResourceItem }) {
           {resource.fileType} • {resource.fileSize}
         </p>
       </div>
-      <a
-        href={resource.image}
-        download
-        className="shrink-0 size-10 rounded-lg bg-[#2a2a2a] flex items-center justify-center text-[#ebc249] hover:bg-[#353534]"
-        aria-label={`Download ${resource.title}`}
-      >
-        <DownloadIcon />
-      </a>
+      {resource.downloadUrl ? (
+        <a
+          href={resource.downloadUrl}
+          className="shrink-0 size-10 rounded-lg bg-[#2a2a2a] flex items-center justify-center text-[#ebc249] hover:bg-[#353534]"
+          aria-label={`Download ${resource.title}`}
+        >
+          <DownloadIcon />
+        </a>
+      ) : (
+        <span
+          className="shrink-0 size-10 rounded-lg bg-[#2a2a2a] flex items-center justify-center text-[rgba(229,226,225,0.25)]"
+          title="Not available yet"
+          aria-label={`${resource.title} — download not available yet`}
+        >
+          <DownloadIcon />
+        </span>
+      )}
     </div>
   );
 }
