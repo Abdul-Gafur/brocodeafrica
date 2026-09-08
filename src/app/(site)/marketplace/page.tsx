@@ -1,16 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getMarketplace } from "@/lib/api/products";
-import { ProductItem } from "@/lib/types/product";
+import { formatPrice } from "@/lib/format";
 
 const CATEGORY_FILTERS = ["All Products", "Merch", "Wellness", "Digital Assets"] as const;
 
-function formatPrice(product: ProductItem) {
-  return `${product.currency} ${product.price.toLocaleString("en-US")}`;
-}
-
 export default async function MarketplacePage() {
-  const { products, comingSoon, message } = await getMarketplace();
+  const { products, comingSoon, message, preview } = await getMarketplace();
 
   if (comingSoon) {
     return <ComingSoon message={message} />;
@@ -28,6 +24,12 @@ export default async function MarketplacePage() {
             Curated lifestyle and financial essentials for the modern African youth. Every
             purchase supports the Brocode community.
           </p>
+          {preview && (
+            <p className="max-w-[672px] text-sm leading-6 text-[rgba(229,226,225,0.45)]">
+              We&rsquo;re taking orders over WhatsApp while the on-site checkout is being built.
+              Tap <span className="text-[#ebc249]">Buy on WhatsApp</span> to chat with our team.
+            </p>
+          )}
         </div>
       </section>
 
@@ -94,7 +96,7 @@ export default async function MarketplacePage() {
                     {product.title}
                   </h3>
                   <span className="font-geist font-black text-base text-[#ebc249]">
-                    {formatPrice(product)}
+                    {formatPrice(product.price, product.currency)}
                   </span>
                 </div>
                 <div className="flex flex-col gap-2">

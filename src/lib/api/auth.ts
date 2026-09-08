@@ -1,70 +1,38 @@
 import {
   AuthResponse,
+  AuthSessionResponse,
+  AuthUser,
   LoginPayload,
   ResetPasswordConfirmPayload,
   ResetPasswordPayload,
   SignupPayload,
 } from "@/lib/types/auth";
 import { apiFetch } from "@/lib/api/client";
+import { clearSession, getToken, setSession } from "@/lib/auth/session";
 
 /**
- * Real auth calls against `/api/v1/auth/*`. Signatures are unchanged so
- * callers never need to change.
+ * Real auth calls against `/api/v1/auth/*`.
  *
- * `login` / `signup` also return `token` and `user`; we stash the bearer
- * token in localStorage so `logout` can revoke it. Swap this for a proper
- * session store when one exists.
+ * `login` / `signup` persist the bearer token + user through
+ * `@/lib/auth/session`, which is also what `apiFetch` reads and what
+ * `AuthProvider` subscribes to. Everything else here just forwards to the API.
  */
 
-const TOKEN_KEY = "brocode.auth.token";
-
 interface AuthSuccess extends AuthResponse {
-  token?: string;
+  token: string;
+  user: AuthUser;
 }
 
-function storeToken(token?: string): void {
-  if (typeof window === "undefined" || !token) {
-    return;
-  }
-  try {
-    window.localStorage.setItem(TOKEN_KEY, token);
-  } catch {
-    /* private mode / storage disabled — token just isn't remembered */
-  }
-}
-
-function readToken(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-  try {
-    return window.localStorage.getItem(TOKEN_KEY);
-  } catch {
-    return null;
-  }
-}
-
-function clearToken(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  try {
-    window.localStorage.removeItem(TOKEN_KEY);
-  } catch {
-    /* nothing to clear */
-  }
-}
-
-export async function login(payload: LoginPayload): Promise<AuthResponse> {
+export async function login(payload: LoginPayload): Promise<AuthSessionResponse> {
   const res = await apiFetch<AuthSuccess>("/auth/login", {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  storeToken(res.token);
-  return { success: res.success, message: res.message };
+  setSession(res.token, res.user);
+  return { success: res.success, message: res.message, user: res.user };
 }
 
-export async function signup(payload: SignupPayload): Promise<AuthResponse> {
+export async function signup(payload: SignupPayload): Promise<AuthSessionResponse> {
   const res = await apiFetch<AuthSuccess>("/auth/register", {
     method: "POST",
     body: JSON.stringify({
@@ -75,20 +43,36 @@ export async function signup(payload: SignupPayload): Promise<AuthResponse> {
       password_confirmation: payload.passwordConfirmation,
     }),
   });
-  storeToken(res.token);
-  return { success: res.success, message: res.message };
+  setSession(res.token, res.user);
+  return { success: res.success, message: res.message, user: res.user };
 }
 
 export async function logout(): Promise<AuthResponse> {
-  const token = readToken();
+  const token = getToken();
   try {
     return await apiFetch<AuthResponse>("/auth/logout", {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
   } finally {
-    clearToken();
+    clearSession();
   }
+}
+
+/**
+ * The signed-in user for the current token. Used on load to confirm a stored
+ * token is still good (and to pick up a verification that happened elsewhere).
+ * Throws {@link ApiError} 401 when the token has been revoked.
+ */
+export function fetchCurrentUser(): Promise<AuthUser> {
+  return apiFetch<AuthUser>("/auth/user", { cache: "no-store" });
+}
+
+/** Re-send the "confirm your email" message to the signed-in user. */
+export function resendVerificationEmail(): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/auth/email/verification-notification", {
+    method: "POST",
+  });
 }
 
 export async function requestPasswordReset(

@@ -137,6 +137,7 @@ export default async function SrhrPage() {
                 src="/images/srhr-resource.png"
                 alt="Brocode Africa SRHR services"
                 fill
+                sizes="(max-width: 768px) 100vw, 420px"
                 className="object-cover mix-blend-luminosity"
                 priority
               />

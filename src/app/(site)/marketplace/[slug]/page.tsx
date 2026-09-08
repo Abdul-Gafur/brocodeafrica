@@ -2,10 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllProducts, getProductBySlug } from "@/lib/api/products";
-
-function formatPrice(price: number, currency: string) {
-  return `${currency}${price.toLocaleString("en-US")}`;
-}
+import { formatPrice } from "@/lib/format";
 
 export async function generateStaticParams() {
   const products = await getAllProducts();
@@ -44,6 +41,7 @@ export default async function ProductDetailPage({
                   src={product.image}
                   alt={product.title}
                   fill
+                  sizes="(max-width: 768px) 100vw, 600px"
                   className="object-cover"
                   priority
                 />
@@ -54,7 +52,7 @@ export default async function ProductDetailPage({
                     key={index}
                     className="relative aspect-square w-full rounded-2xl overflow-hidden border border-[rgba(77,70,53,0.1)] bg-[#1c1b1b] opacity-60"
                   >
-                    <Image src={product.image} alt="" fill className="object-cover" />
+                    <Image src={product.image} alt="" fill sizes="(max-width: 768px) 25vw, 150px" className="object-cover" />
                   </div>
                 ))}
               </div>

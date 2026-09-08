@@ -5,10 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { NAV_LINKS } from "@/lib/nav";
+import { useAuth } from "@/lib/auth/context";
+import UserMenu from "@/components/layout/UserMenu";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated } = useAuth();
 
   return (
     <header className="fixed top-0 left-0 z-40 w-full backdrop-blur-[12px] bg-[rgba(19,19,19,0.6)] border-b border-[rgba(77,70,53,0.1)]">
@@ -38,6 +41,27 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-4">
+          {isAuthenticated && user ? (
+            <div className="hidden lg:block">
+              <UserMenu user={user} />
+            </div>
+          ) : (
+            <div className="hidden lg:flex items-center gap-3">
+              <Link
+                href="/login"
+                className="font-geist text-[12px] font-bold uppercase tracking-[-0.3px] text-[#e5e2e1] hover:text-[#cba42d] transition-colors"
+              >
+                Log In
+              </Link>
+              <Link
+                href="/signup"
+                className="font-geist text-[12px] font-bold uppercase tracking-[-0.3px] text-[#e5e2e1] border border-[rgba(229,226,225,0.2)] rounded-[2px] px-4 py-[9px] hover:border-[#cba42d] hover:text-[#cba42d] transition-colors"
+              >
+                Sign Up
+              </Link>
+            </div>
+          )}
+
           <Link
             href="/ma-guy"
             className="shrink-0 bg-[#ebc249] rounded-[2px] px-8 py-[10px] shadow-[0px_10px_15px_-3px_rgba(235,194,73,0.2),0px_4px_6px_-4px_rgba(235,194,73,0.2)]"
@@ -88,8 +112,70 @@ export default function Navbar() {
               </Link>
             );
           })}
+
+          <div className="mt-2 pt-3 border-t border-[rgba(77,70,53,0.2)]">
+            {isAuthenticated && user ? (
+              <MobileAuthActions
+                user={user}
+                onNavigate={() => setIsMobileMenuOpen(false)}
+              />
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Link
+                  href="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="font-geist font-bold text-[14px] uppercase py-3 text-[#e5e2e1]"
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/signup"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="font-geist font-black text-[14px] uppercase text-center bg-[#ebc249] text-[#3d2e00] rounded-[2px] py-3"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
+          </div>
         </nav>
       )}
     </header>
+  );
+}
+
+function MobileAuthActions({
+  user,
+  onNavigate,
+}: {
+  user: NonNullable<ReturnType<typeof useAuth>["user"]>;
+  onNavigate: () => void;
+}) {
+  const { logout } = useAuth();
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="py-2">
+        <p className="font-geist text-[14px] font-bold text-[#e5e2e1] truncate">{user.name}</p>
+        <p className="text-[12px] text-[rgba(229,226,225,0.5)] truncate">{user.email}</p>
+      </div>
+      <Link
+        href="/account"
+        onClick={onNavigate}
+        className="font-geist font-bold text-[14px] uppercase py-3 text-[#e5e2e1]"
+      >
+        Account Settings
+      </Link>
+      <button
+        type="button"
+        onClick={() => {
+          onNavigate();
+          void logout();
+        }}
+        className="font-geist font-bold text-[14px] uppercase py-3 text-left text-[rgba(229,226,225,0.7)]"
+      >
+        Log Out
+      </button>
+    </div>
   );
 }

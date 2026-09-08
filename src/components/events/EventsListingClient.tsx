@@ -67,7 +67,7 @@ function EventCard({ event }: { event: EventItem }) {
   return (
     <div className="bg-[#201f1f] border border-[rgba(77,70,53,0.1)] rounded-[32px] overflow-hidden flex flex-col">
       <div className="relative h-48 w-full">
-        <Image src={event.image} alt={event.title} fill className="object-cover" />
+        <Image src={event.image} alt={event.title} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 380px" className="object-cover" />
         <span className="absolute left-4 top-4 bg-[#ebc249] px-3 py-1 rounded-xl font-geist font-black text-[10px] tracking-[1px] uppercase text-[#3d2e00]">
           {event.category}
         </span>

@@ -72,7 +72,7 @@ export default async function ResourceDetailPage({
           </div>
 
           <div className="relative h-[320px] md:h-[420px] w-full rounded-[32px] overflow-hidden border border-[rgba(77,70,53,0.1)]">
-            <Image src={resource.image} alt={resource.title} fill className="object-cover" />
+            <Image src={resource.image} alt={resource.title} fill sizes="(max-width: 1024px) 100vw, 900px" className="object-cover" />
           </div>
 
           {resource.excerpt && (

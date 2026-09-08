@@ -118,6 +118,7 @@ export default function FinancialLiteracyPage() {
                 src="/images/services/financial-literacy.jpg"
                 alt="Brocode Africa financial literacy"
                 fill
+                sizes="(max-width: 768px) 100vw, 420px"
                 className="object-cover mix-blend-luminosity"
                 priority
               />

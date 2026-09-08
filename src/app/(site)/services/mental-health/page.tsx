@@ -137,6 +137,7 @@ export default async function MentalHealthPage() {
                 src="/images/health-event.png"
                 alt="Brocode Africa mental health support"
                 fill
+                sizes="(max-width: 768px) 100vw, 420px"
                 className="object-cover mix-blend-luminosity"
                 priority
               />

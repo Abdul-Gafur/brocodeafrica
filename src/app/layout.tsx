@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Manrope } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/lib/auth/context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +30,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${manrope.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#0e0e0e] text-[#e5e2e1] font-manrope">
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

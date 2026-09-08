@@ -35,7 +35,7 @@ export default async function EventDetailPage({
           </Link>
 
           <div className="relative h-[280px] md:h-[420px] w-full rounded-[32px] overflow-hidden border border-[rgba(77,70,53,0.1)]">
-            <Image src={event.image} alt={event.title} fill className="object-cover" priority />
+            <Image src={event.image} alt={event.title} fill sizes="(max-width: 1024px) 100vw, 900px" className="object-cover" priority />
             <span className="absolute left-6 top-6 bg-[#ebc249] px-4 py-[6px] rounded-xl font-geist font-black text-[10px] tracking-[1px] uppercase text-[#3d2e00]">
               {event.category}
             </span>

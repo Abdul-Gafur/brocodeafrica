@@ -3,7 +3,6 @@ import Link from "next/link";
 import { getFeaturedResources } from "@/lib/api/resources";
 import { getUpcomingEvents } from "@/lib/api/events";
 import { getCoreServices } from "@/lib/api/services";
-import ReferralButton from "@/components/services/ReferralButton";
 
 const JOURNEY_STEPS = [
   {
@@ -65,6 +64,7 @@ export default async function HomePage() {
                 src="/images/community.png"
                 alt="Brocode Africa community"
                 fill
+                sizes="(max-width: 768px) 100vw, 420px"
                 className="object-cover mix-blend-luminosity"
                 priority
               />
@@ -140,24 +140,13 @@ export default async function HomePage() {
                     </span>
                   ))}
                 </div>
-                {service.referralUrl ? (
-                  <ReferralButton
-                    referralUrl={service.referralUrl}
-                    partnerName={service.partnerName}
-                    className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#ebc249] font-geist font-black text-[16px] text-[#3d2e00] disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    Get Help
-                    <ArrowRightIcon />
-                  </ReferralButton>
-                ) : (
-                  <Link
-                    href={service.href}
-                    className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#ebc249] font-geist font-black text-[16px] text-[#3d2e00]"
-                  >
-                    Get Help
-                    <ArrowRightIcon />
-                  </Link>
-                )}
+                <Link
+                  href={service.href}
+                  className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#ebc249] font-geist font-black text-[16px] text-[#3d2e00]"
+                >
+                  Get Help
+                  <ArrowRightIcon />
+                </Link>
               </div>
             ))}
           </div>
@@ -189,7 +178,7 @@ export default async function HomePage() {
                 className="bg-[#201f1f] border border-[rgba(77,70,53,0.1)] rounded-[32px] overflow-hidden flex flex-col"
               >
                 <div className="relative h-48 w-full">
-                  <Image src={event.image} alt={event.title} fill className="object-cover" />
+                  <Image src={event.image} alt={event.title} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 400px" className="object-cover" />
                   <span className="absolute left-4 top-4 bg-[#ebc249] px-3 py-1 rounded-xl font-geist font-black text-[10px] tracking-[1px] uppercase text-[#3d2e00]">
                     {event.category}
                   </span>
@@ -293,7 +282,7 @@ export default async function HomePage() {
                 className="bg-[#201f1f] border border-[rgba(77,70,53,0.05)] rounded-2xl overflow-hidden flex flex-col"
               >
                 <div className="relative h-48 w-full">
-                  <Image src={resource.image} alt={resource.title} fill className="object-cover" />
+                  <Image src={resource.image} alt={resource.title} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 400px" className="object-cover" />
                 </div>
                 <div className="flex flex-col gap-2 p-6">
                   <span className="font-geist font-black text-[10px] tracking-[1px] uppercase text-[#ebc249]">

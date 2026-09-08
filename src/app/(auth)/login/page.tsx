@@ -3,9 +3,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
-import { login } from "@/lib/api/auth";
+import { FormEvent, useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth/context";
 import { ArrowRightIcon, EyeIcon, EyeOffIcon } from "@/components/auth/icons";
+
+/** Where to land after signing in — an explicit same-site `?redirect=`, else Ma Guy. */
+const DEFAULT_REDIRECT = "/ma-guy";
+
+function initialRedirect(): string {
+  if (typeof window === "undefined") return DEFAULT_REDIRECT;
+  const value = new URLSearchParams(window.location.search).get("redirect");
+  return value && value.startsWith("/") && !value.startsWith("//")
+    ? value
+    : DEFAULT_REDIRECT;
+}
 
 interface FormErrors {
   email?: string;
@@ -16,12 +27,22 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login, isAuthenticated } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [redirectTo] = useState(initialRedirect);
+
+  // Leave this page the moment there's a session — whether it was just created
+  // here, or the visitor was already signed in when they landed.
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace(redirectTo);
+    }
+  }, [isAuthenticated, redirectTo, router]);
 
   function validate(): boolean {
     const nextErrors: FormErrors = {};
@@ -45,8 +66,8 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await login({ email, password });
-      router.push("/");
-      router.refresh();
+      // The effect above performs the redirect once the session lands; keep the
+      // button in its "submitting" state until this page unmounts.
     } catch {
       setFormError("Invalid email or password. Please try again.");
       setIsSubmitting(false);
@@ -54,7 +75,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex w-full flex-1 items-center justify-center overflow-clip px-4 pb-[153.5px] pt-[201.5px]">
+    <div className="relative flex w-full flex-1 items-center justify-center overflow-hidden px-4 py-10">
       <div className="pointer-events-none absolute left-1/2 top-1/2 size-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(235,194,73,0.05)] blur-[60px]" />
 
       <div
@@ -66,19 +87,20 @@ export default function LoginPage() {
             src="/images/auth/editorial-hero.png"
             alt=""
             fill
+            sizes="(max-width: 1024px) 50vw, 33vw"
             className="object-cover mix-blend-saturation"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-l from-[#0e0e0e] to-transparent" />
       </div>
 
-      <div className="relative flex w-full max-w-[448px] flex-col items-start gap-8">
-        <div className="flex w-full flex-col gap-10">
-          <div className="flex w-full flex-col gap-3">
+      <div className="relative flex w-full max-w-[380px] flex-col items-start gap-6">
+        <div className="flex w-full flex-col gap-6">
+          <div className="flex w-full flex-col gap-2">
             <p className="font-manrope text-[10px] uppercase tracking-[2px] text-[#ebc249]">
               Welcome Back
             </p>
-            <h1 className="font-geist text-[48px] font-black leading-[48px] tracking-[-2.4px] text-[#e5e2e1]">
+            <h1 className="font-geist text-[40px] font-black leading-[40px] tracking-[-2px] text-[#e5e2e1]">
               Code with
               <br />
               <span className="text-[#cba42d]">purpose.</span>
@@ -88,9 +110,9 @@ export default function LoginPage() {
           <form
             onSubmit={handleSubmit}
             noValidate
-            className="flex w-full flex-col gap-10 rounded-2xl border border-[rgba(77,70,53,0.1)] bg-[#201f1f] p-[41px] shadow-[0px_20px_25px_rgba(0,0,0,0.4)] backdrop-blur-[2px]"
+            className="flex w-full flex-col gap-6 rounded-2xl border border-[rgba(77,70,53,0.1)] bg-[#201f1f] p-8 shadow-[0px_20px_25px_rgba(0,0,0,0.4)] backdrop-blur-[2px]"
           >
-            <div className="flex w-full flex-col gap-6">
+            <div className="flex w-full flex-col gap-5">
               <div className="flex w-full flex-col gap-[7px]">
                 <label
                   htmlFor="email"
@@ -175,7 +197,7 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <div className="w-full border-t border-[rgba(77,70,53,0.1)] pt-[33px]">
+            <div className="w-full border-t border-[rgba(77,70,53,0.1)] pt-5">
               <p className="flex items-center justify-center gap-1 text-center text-[14px] text-[rgba(229,226,225,0.4)]">
                 {"Don't have an account? "}
                 <Link href="/signup" className="font-semibold text-[#e5e2e1] hover:text-[#ebc249]">

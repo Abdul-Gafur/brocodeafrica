@@ -194,7 +194,7 @@ function ArticleCard({ resource }: { resource: ResourceItem }) {
   return (
     <div className="bg-[#1c1b1b] border border-[rgba(77,70,53,0.1)] rounded-2xl overflow-hidden flex flex-col">
       <div className="relative h-56 w-full">
-        <Image src={resource.image} alt={resource.title} fill className="object-cover" />
+        <Image src={resource.image} alt={resource.title} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 380px" className="object-cover" />
         <span className="absolute left-4 top-4 bg-[rgba(42,42,42,0.9)] backdrop-blur-sm px-3 py-1 rounded-xl font-geist font-black text-[10px] tracking-[0.5px] uppercase text-[#e5e2e1]">
           {resource.category}
         </span>

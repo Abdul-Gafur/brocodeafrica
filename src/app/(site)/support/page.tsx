@@ -14,10 +14,7 @@ export default async function SupportPage() {
       {/* Hero */}
       <section className="relative w-full flex items-center justify-center overflow-hidden px-6 py-24">
         <div className="flex flex-col gap-6 items-center text-center max-w-[768px] w-full relative">
-          <span className="inline-flex items-center gap-2 w-fit bg-[rgba(255,180,171,0.1)] px-4 py-[6px] rounded-xl font-geist font-black text-[10px] tracking-[1px] uppercase text-[#ffb4ab]">
-            <AlertIcon />
-            24/7 Priority Support
-          </span>
+
           <h1 className="font-geist font-black text-[48px] md:text-[72px] leading-[1] tracking-[-3.6px] text-[#e5e2e1]">
             You&apos;re not alone.
             <br />

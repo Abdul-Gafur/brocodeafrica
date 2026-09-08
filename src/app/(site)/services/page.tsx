@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getCoreServices, getSecondaryServices } from "@/lib/api/services";
-import ReferralButton from "@/components/services/ReferralButton";
 
 export default async function ServicesPage() {
   const [coreServices, secondaryServices] = await Promise.all([
@@ -70,24 +69,13 @@ export default async function ServicesPage() {
                     </span>
                   ))}
                 </div>
-                {service.referralUrl ? (
-                  <ReferralButton
-                    referralUrl={service.referralUrl}
-                    partnerName={service.partnerName}
-                    className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#ebc249] font-geist font-black text-[16px] text-[#3d2e00] shadow-[0px_10px_15px_-3px_rgba(235,194,73,0.2),0px_4px_6px_-4px_rgba(235,194,73,0.2)] disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    Get Help
-                    {service.variant === "crisis" ? <PhoneIcon /> : <ArrowRightIcon />}
-                  </ReferralButton>
-                ) : (
-                  <Link
-                    href={service.href}
-                    className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#ebc249] font-geist font-black text-[16px] text-[#3d2e00] shadow-[0px_10px_15px_-3px_rgba(235,194,73,0.2),0px_4px_6px_-4px_rgba(235,194,73,0.2)]"
-                  >
-                    Get Help
-                    {service.variant === "crisis" ? <PhoneIcon /> : <ArrowRightIcon />}
-                  </Link>
-                )}
+                <Link
+                  href={service.href}
+                  className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#ebc249] font-geist font-black text-[16px] text-[#3d2e00] shadow-[0px_10px_15px_-3px_rgba(235,194,73,0.2),0px_4px_6px_-4px_rgba(235,194,73,0.2)]"
+                >
+                  Get Help
+                  {service.variant === "crisis" ? <PhoneIcon /> : <ArrowRightIcon />}
+                </Link>
               </div>
             ))}
           </div>
@@ -104,6 +92,7 @@ export default async function ServicesPage() {
                     src={service.image}
                     alt={service.title}
                     fill
+                    sizes="(max-width: 640px) 100vw, 420px"
                     className="object-cover mix-blend-luminosity"
                   />
                 </div>

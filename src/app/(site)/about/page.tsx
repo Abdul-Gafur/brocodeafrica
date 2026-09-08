@@ -94,6 +94,7 @@ export default function AboutPage() {
                 src="/images/community.png"
                 alt="Young Africans building community together"
                 fill
+                sizes="(max-width: 768px) 100vw, 420px"
                 className="object-cover mix-blend-luminosity"
               />
             </div>

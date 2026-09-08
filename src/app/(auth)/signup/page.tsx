@@ -2,9 +2,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
-import { signup } from "@/lib/api/auth";
+import { FormEvent, useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth/context";
 import { EyeIcon, EyeOffIcon } from "@/components/auth/icons";
+
+/** Where to land after registering — an explicit same-site `?redirect=`, else Ma Guy. */
+const DEFAULT_REDIRECT = "/ma-guy";
+
+function initialRedirect(): string {
+  if (typeof window === "undefined") return DEFAULT_REDIRECT;
+  const value = new URLSearchParams(window.location.search).get("redirect");
+  return value && value.startsWith("/") && !value.startsWith("//")
+    ? value
+    : DEFAULT_REDIRECT;
+}
 
 interface FormErrors {
   fullName?: string;
@@ -17,6 +28,8 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { signup, isAuthenticated } = useAuth();
+  const [redirectTo] = useState(initialRedirect);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,6 +38,14 @@ export default function SignUpPage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Leave this page the moment there's a session — just created here, or the
+  // visitor was already signed in when they landed.
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace(redirectTo);
+    }
+  }, [isAuthenticated, redirectTo, router]);
 
   function validate(): boolean {
     const nextErrors: FormErrors = {};
@@ -63,8 +84,7 @@ export default function SignUpPage() {
         password,
         passwordConfirmation: confirmPassword,
       });
-      router.push("/");
-      router.refresh();
+      // The effect above redirects once the session lands.
     } catch {
       setFormError("Could not create your account. This email may already be in use.");
       setIsSubmitting(false);
