@@ -10,12 +10,13 @@ import { apiFetch, ApiError } from "@/lib/api/client";
  *
  * The server owns conversation history. We hold two ids so a thread survives a
  * refresh and can be reloaded:
- *   - `sessionId`      — a stable per-browser id, sent as `X-Session-Id`. Lets
+ *   - `sessionId`      — a stable per-tab id, sent as `X-Session-Id`. Lets
  *                        an anonymous visitor keep one thread and be rate-limited
  *                        fairly, and authorises reloading that thread.
  *   - `conversationId` — the thread the server created; echoed back each turn.
- * Both are persisted to localStorage; a signed-in visitor's threads are also
- * keyed to their account server-side, so they reload on any device.
+ * Both are kept in sessionStorage so an anonymous thread survives a refresh
+ * without becoming a long-lived capability on a shared device. A signed-in
+ * visitor's threads are keyed to their account server-side.
  *
  * Response shape: { conversationId: string, message: ChatMessage }
  */
@@ -26,7 +27,9 @@ const CONVERSATION_KEY = "brocode.maguy.conversation";
 function readStore(key: string): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return window.localStorage.getItem(key);
+    // Remove capabilities written by older releases to persistent storage.
+    window.localStorage.removeItem(key);
+    return window.sessionStorage.getItem(key);
   } catch {
     return null;
   }
@@ -35,8 +38,9 @@ function readStore(key: string): string | null {
 function writeStore(key: string, value: string | null): void {
   if (typeof window === "undefined") return;
   try {
-    if (value) window.localStorage.setItem(key, value);
-    else window.localStorage.removeItem(key);
+    window.localStorage.removeItem(key);
+    if (value) window.sessionStorage.setItem(key, value);
+    else window.sessionStorage.removeItem(key);
   } catch {
     /* storage unavailable — the thread just won't survive a reload */
   }
@@ -44,15 +48,20 @@ function writeStore(key: string, value: string | null): void {
 
 let sessionId: string | null = null;
 
+function createSessionId(): string {
+  if (typeof globalThis.crypto?.randomUUID !== "function") {
+    throw new Error("Secure browser randomness is required to start an anonymous chat.");
+  }
+
+  return globalThis.crypto.randomUUID();
+}
+
 function getSessionId(): string {
   if (sessionId === null) {
     sessionId = readStore(SESSION_KEY);
   }
   if (sessionId === null) {
-    sessionId =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    sessionId = createSessionId();
     writeStore(SESSION_KEY, sessionId);
   }
   return sessionId;

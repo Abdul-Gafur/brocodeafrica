@@ -4,17 +4,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/context";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 import { EyeIcon, EyeOffIcon } from "@/components/auth/icons";
 
 /** Where to land after registering — an explicit same-site `?redirect=`, else Ma Guy. */
-const DEFAULT_REDIRECT = "/ma-guy";
-
 function initialRedirect(): string {
-  if (typeof window === "undefined") return DEFAULT_REDIRECT;
+  if (typeof window === "undefined") return "/ma-guy";
   const value = new URLSearchParams(window.location.search).get("redirect");
-  return value && value.startsWith("/") && !value.startsWith("//")
-    ? value
-    : DEFAULT_REDIRECT;
+
+  return safeRedirectPath(value, window.location.origin);
 }
 
 interface FormErrors {

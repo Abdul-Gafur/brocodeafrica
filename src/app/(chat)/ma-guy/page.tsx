@@ -21,7 +21,7 @@ import { useAuth } from "@/lib/auth/context";
 import { updatePreferences } from "@/lib/api/user";
 
 const MODEL_STORAGE_KEY = "brocode.maguy.model";
-const TRANSCRIPT_STORAGE_KEY = "brocode.maguy.transcript";
+const LEGACY_TRANSCRIPT_STORAGE_KEY = "brocode.maguy.transcript";
 
 const SUGGESTED_PROMPTS = [
   "I'm feeling anxious, who can I talk to?",
@@ -55,34 +55,9 @@ const INITIAL_MESSAGE: ChatMessage = {
   id: "assistant-welcome",
   role: "assistant",
   content:
-    "Hey, I'm Ma Guy — your digital sanctuary companion. Ask me anything about mental health, SRHR, finances, or where to find support. This space is 100% anonymous.",
+    "Hey, I'm Ma Guy — your digital sanctuary companion. You can chat without sharing your name. Messages are saved so you can continue the conversation, so avoid including details you don't want stored.",
   timestamp: now(),
 };
-
-function readTranscript(): ChatMessage[] | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(TRANSCRIPT_STORAGE_KEY);
-    const parsed = raw ? (JSON.parse(raw) as ChatMessage[]) : null;
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeTranscript(messages: ChatMessage[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    // Nothing worth keeping until the visitor has actually said something.
-    if (messages.length <= 1) {
-      window.localStorage.removeItem(TRANSCRIPT_STORAGE_KEY);
-    } else {
-      window.localStorage.setItem(TRANSCRIPT_STORAGE_KEY, JSON.stringify(messages));
-    }
-  } catch {
-    /* storage unavailable */
-  }
-}
 
 export default function MaGuyPage() {
   const { isAuthenticated, status: authStatus, user, applyUser } = useAuth();
@@ -109,18 +84,17 @@ export default function MaGuyPage() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // Restore the thread after a refresh: paint the cached transcript
-  // immediately, then reconcile with the server's copy (authoritative, and
-  // how a signed-in visitor picks their thread up on another device).
+  // Restore the authoritative server copy after a refresh. Transcript content
+  // is deliberately not persisted in browser storage.
   useEffect(() => {
     if (hydratedRef.current) return;
     hydratedRef.current = true;
 
-    // Reading persisted state from localStorage can only happen after mount
-    // (it isn't available during SSR), so this one sync setState is expected.
-    const cached = readTranscript();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (cached) setMessages(cached);
+    try {
+      window.localStorage.removeItem(LEGACY_TRANSCRIPT_STORAGE_KEY);
+    } catch {
+      /* storage unavailable */
+    }
 
     let active = true;
     loadMaGuyConversation().then((thread) => {
@@ -150,15 +124,8 @@ export default function MaGuyPage() {
     };
   }, [isAuthenticated, refreshConversations]);
 
-  // Persist every change so the thread survives a reload for everyone,
-  // signed in or not.
-  useEffect(() => {
-    writeTranscript(messages);
-  }, [messages]);
-
   function handleNewChat() {
     resetMaGuyConversation();
-    writeTranscript([INITIAL_MESSAGE]);
     setMessages([INITIAL_MESSAGE]);
     setActiveId(null);
     setInput("");
