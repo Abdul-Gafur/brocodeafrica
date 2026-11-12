@@ -1,12 +1,33 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAllProducts, getProductBySlug } from "@/lib/api/products";
+import { ComingSoon, MarketplaceUnavailable } from "@/components/marketplace/MarketplaceNotice";
+import { getAllProducts, getProductPage } from "@/lib/api/products";
 import { formatPrice } from "@/lib/format";
 
+/** Empty while the shop is closed or the API is unreachable at build time. */
 export async function generateStaticParams() {
   const products = await getAllProducts();
   return products.map((product) => ({ slug: product.slug }));
+}
+
+/**
+ * While the shop is closed every product URL renders the Coming Soon page with
+ * a 200, and an API outage renders "Unavailable"; neither may be indexed.
+ * The fetches are memoised with the page's own calls.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const page = await getProductPage(slug);
+  if (page.status === "coming-soon" || page.status === "unavailable") {
+    return { robots: { index: false, follow: true } };
+  }
+  return {};
 }
 
 export default async function ProductDetailPage({
@@ -15,11 +36,20 @@ export default async function ProductDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const page = await getProductPage(slug);
 
-  if (!product) {
+  // Admin "Coming Soon" switch on: no product is exposed, whatever the slug.
+  if (page.status === "coming-soon") {
+    return <ComingSoon message={page.message} />;
+  }
+  if (page.status === "unavailable") {
+    return <MarketplaceUnavailable />;
+  }
+  if (page.status === "not-found") {
     notFound();
   }
+
+  const { product } = page;
 
   return (
     <div className="flex flex-col items-center w-full">

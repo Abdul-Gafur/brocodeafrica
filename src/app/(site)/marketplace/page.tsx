@@ -1,16 +1,37 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { ComingSoon, MarketplaceUnavailable } from "@/components/marketplace/MarketplaceNotice";
 import { getMarketplace } from "@/lib/api/products";
 import { formatPrice } from "@/lib/format";
 
 const CATEGORY_FILTERS = ["All Products", "Merch", "Wellness", "Digital Assets"] as const;
 
-export default async function MarketplacePage() {
-  const { products, comingSoon, message, preview } = await getMarketplace();
-
-  if (comingSoon) {
-    return <ComingSoon message={message} />;
+/**
+ * Keep the closed / unreachable shop out of search results: those states
+ * still answer 200, so they must not be indexed as the marketplace page.
+ * The fetch is memoised with the page's own call, so this adds no request.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const marketplace = await getMarketplace();
+  if (marketplace.status !== "open") {
+    return { robots: { index: false, follow: true } };
   }
+  return {};
+}
+
+export default async function MarketplacePage() {
+  const marketplace = await getMarketplace();
+
+  // Admin "Coming Soon" switch on: the API withholds the catalogue.
+  if (marketplace.status === "coming-soon") {
+    return <ComingSoon message={marketplace.message} />;
+  }
+  if (marketplace.status === "unavailable") {
+    return <MarketplaceUnavailable />;
+  }
+
+  const { products } = marketplace;
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -24,12 +45,10 @@ export default async function MarketplacePage() {
             Curated lifestyle and financial essentials for the modern African youth. Every
             purchase supports the Brocode community.
           </p>
-          {preview && (
-            <p className="max-w-[672px] text-sm leading-6 text-[rgba(229,226,225,0.45)]">
-              We&rsquo;re taking orders over WhatsApp while the on-site checkout is being built.
-              Tap <span className="text-[#ebc249]">Buy on WhatsApp</span> to chat with our team.
-            </p>
-          )}
+          <p className="max-w-[672px] text-sm leading-6 text-[rgba(229,226,225,0.45)]">
+            We&rsquo;re taking orders over WhatsApp while the on-site checkout is being built.
+            Tap <span className="text-[#ebc249]">Buy on WhatsApp</span> to chat with our team.
+          </p>
         </div>
       </section>
 
@@ -72,6 +91,11 @@ export default async function MarketplacePage() {
 
       {/* Product Grid */}
       <section className="w-full flex flex-col items-center px-6 py-16">
+        {products.length === 0 && (
+          <p className="max-w-[1280px] w-full text-center text-[18px] leading-7 text-[rgba(229,226,225,0.6)]">
+            No products are listed yet. Check back soon.
+          </p>
+        )}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-[1280px] w-full">
           {products.map((product) => (
             <div
@@ -140,33 +164,6 @@ export default async function MarketplacePage() {
               Shop All Products
             </Link>
           </div>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function ComingSoon({ message }: { message?: string }) {
-  return (
-    <div className="flex flex-col items-center w-full">
-      <section className="w-full flex flex-col items-center px-6 py-24 md:py-40">
-        <div className="relative max-w-[768px] w-full bg-[#1c1b1b] border border-[rgba(77,70,53,0.1)] rounded-[32px] overflow-hidden flex flex-col items-center text-center gap-6 px-8 py-20">
-          <div className="absolute -right-24 -top-24 size-64 bg-[rgba(235,194,73,0.06)] blur-3xl rounded-xl" />
-          <span className="relative bg-[#201f1f] border border-[rgba(77,70,53,0.2)] px-[17px] py-[7px] rounded-xl font-geist font-black text-[10px] tracking-[2px] uppercase text-[#ebc249]">
-            The Marketplace
-          </span>
-          <h1 className="relative font-geist font-black text-[36px] md:text-[48px] tracking-[-1.2px] text-[#e5e2e1]">
-            Coming Soon
-          </h1>
-          <p className="relative max-w-[520px] text-[18px] leading-7 text-[rgba(229,226,225,0.6)]">
-            {message ?? "Our marketplace is launching soon. Watch this space."}
-          </p>
-          <Link
-            href="/resources"
-            className="relative mt-2 flex items-center justify-center px-8 py-[16px] rounded-2xl bg-[#ebc249] font-geist font-black text-[16px] text-[#3d2e00]"
-          >
-            Explore Resources Instead
-          </Link>
         </div>
       </section>
     </div>
