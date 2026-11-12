@@ -7,7 +7,7 @@ import {
   ResetPasswordPayload,
   SignupPayload,
 } from "@/lib/types/auth";
-import { apiFetch } from "@/lib/api/client";
+import { apiFetch, ApiError } from "@/lib/api/client";
 import { clearSession, getToken, setSession } from "@/lib/auth/session";
 
 /**
@@ -54,6 +54,13 @@ export async function logout(): Promise<AuthResponse> {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
+  } catch (error) {
+    // 401: the token was already revoked (account closed, password reset, or
+    // signed out elsewhere). The visitor is signed out either way.
+    if (error instanceof ApiError && error.status === 401) {
+      return { success: true, message: "Signed out." };
+    }
+    throw error;
   } finally {
     clearSession();
   }

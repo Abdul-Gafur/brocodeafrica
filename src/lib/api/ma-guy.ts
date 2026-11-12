@@ -4,6 +4,14 @@ import {
   MaGuyModelList,
 } from "@/lib/types/ma-guy";
 import { apiFetch, ApiError } from "@/lib/api/client";
+import {
+  createTabIdGetter,
+  MA_GUY_CONVERSATION_KEY,
+  MA_GUY_SESSION_KEY,
+  onTabSessionReset,
+  readTabValue,
+  writeTabValue,
+} from "@/lib/visitor-session";
 
 /**
  * Real "Ma Guy" assistant calls (3.5).
@@ -21,54 +29,25 @@ import { apiFetch, ApiError } from "@/lib/api/client";
  * Response shape: { conversationId: string, message: ChatMessage }
  */
 
-const SESSION_KEY = "brocode.maguy.session";
-const CONVERSATION_KEY = "brocode.maguy.conversation";
+const SESSION_KEY = MA_GUY_SESSION_KEY;
+const CONVERSATION_KEY = MA_GUY_CONVERSATION_KEY;
 
-function readStore(key: string): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    // Remove capabilities written by older releases to persistent storage.
-    window.localStorage.removeItem(key);
-    return window.sessionStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writeStore(key: string, value: string | null): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.removeItem(key);
-    if (value) window.sessionStorage.setItem(key, value);
-    else window.sessionStorage.removeItem(key);
-  } catch {
-    /* storage unavailable — the thread just won't survive a reload */
-  }
-}
-
-let sessionId: string | null = null;
-
-function createSessionId(): string {
-  if (typeof globalThis.crypto?.randomUUID !== "function") {
-    throw new Error("Secure browser randomness is required to start an anonymous chat.");
-  }
-
-  return globalThis.crypto.randomUUID();
-}
-
-function getSessionId(): string {
-  if (sessionId === null) {
-    sessionId = readStore(SESSION_KEY);
-  }
-  if (sessionId === null) {
-    sessionId = createSessionId();
-    writeStore(SESSION_KEY, sessionId);
-  }
-  return sessionId;
-}
+const readStore = readTabValue;
+const writeStore = writeTabValue;
+// The guest session id is the only credential needed to read an unclaimed
+// anonymous chat, so it is private to this module: never send it anywhere but
+// the Ma Guy endpoints (referrals use their own id from lib/visitor-session).
+const getSessionId = createTabIdGetter(SESSION_KEY);
 
 let conversationId: string | null = null;
 let conversationLoaded = false;
+
+// Sign-out clears the stored thread id; drop the in-memory copy too, so the
+// next message starts a fresh thread under the new guest session.
+onTabSessionReset(() => {
+  conversationId = null;
+  conversationLoaded = false;
+});
 
 function getConversationId(): string | null {
   if (!conversationLoaded) {

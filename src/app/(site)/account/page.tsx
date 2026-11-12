@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth/context";
+import { clearSession } from "@/lib/auth/session";
 import { ApiError } from "@/lib/api/client";
 import {
   changePassword,
@@ -41,10 +42,13 @@ function BannerLine({ banner }: { banner: Banner }) {
 
 export default function AccountPage() {
   const router = useRouter();
-  const { user, status, applyUser, logout } = useAuth();
+  const { user, status, applyUser } = useAuth();
+  // Set once the account is closed, so dropping the local session sends the
+  // visitor home rather than to the sign-in page.
+  const accountClosed = useRef(false);
 
   useEffect(() => {
-    if (status === "anonymous") {
+    if (status === "anonymous" && !accountClosed.current) {
       router.replace("/login?redirect=/account");
     }
   }, [status, router]);
@@ -85,9 +89,13 @@ export default function AccountPage() {
       />
 
       <DangerCard
-        onDeleted={async () => {
-          await logout();
-          router.push("/");
+        onDeleted={() => {
+          // `DELETE /user` already revoked every token, so there is nothing to
+          // log out of server-side (a logout call would 401). Drop the local
+          // session and leave.
+          accountClosed.current = true;
+          clearSession();
+          router.replace("/");
           router.refresh();
         }}
       />
@@ -352,7 +360,7 @@ function PreferencesCard({
   );
 }
 
-function DangerCard({ onDeleted }: { onDeleted: () => Promise<void> }) {
+function DangerCard({ onDeleted }: { onDeleted: () => void }) {
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [working, setWorking] = useState(false);
@@ -363,7 +371,6 @@ function DangerCard({ onDeleted }: { onDeleted: () => Promise<void> }) {
     setBanner(null);
     try {
       await deleteAccount(password);
-      await onDeleted();
     } catch (error) {
       setBanner({
         tone: "error",
@@ -373,7 +380,11 @@ function DangerCard({ onDeleted }: { onDeleted: () => Promise<void> }) {
             : "Couldn't close your account. Try again.",
       });
       setWorking(false);
+      return;
     }
+    // Outside the try: a problem leaving the page must not be reported as a
+    // failed closure, because the account is already gone.
+    onDeleted();
   }
 
   return (

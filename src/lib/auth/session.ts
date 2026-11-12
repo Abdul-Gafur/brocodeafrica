@@ -1,4 +1,5 @@
 import { AuthUser } from "@/lib/types/auth";
+import { resetTabSession } from "@/lib/visitor-session";
 
 /**
  * The browser-side source of truth for "who is signed in".
@@ -96,6 +97,9 @@ export function clearSession(): void {
   } catch {
     /* ignore */
   }
+  // A new anonymous session starts: the old Ma Guy guest id and referral
+  // visitor id must not carry over to whoever uses this tab next (KI-04).
+  resetTabSession();
   emit();
 }
 
