@@ -141,7 +141,7 @@ export default function SignUpPage() {
                 name="email"
                 type="email"
                 autoComplete="email"
-                placeholder="visionary@brocodeafrica.com"
+                placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 aria-invalid={Boolean(errors.email)}

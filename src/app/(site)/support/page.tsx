@@ -6,7 +6,8 @@ import { CoordinatorForm } from "@/components/support/CoordinatorForm";
 
 export default async function SupportPage() {
   const [channels, faqs] = await Promise.all([getSupportChannels(), getSupportFaqs()]);
-  const emergencyChannel = channels.find((channel) => channel.urgency === "emergency");
+  // Every crisis line gets its own banner; the first is the "start here" one.
+  const emergencyChannels = channels.filter((channel) => channel.urgency === "emergency");
   const standardChannels = channels.filter((channel) => channel.urgency !== "emergency");
 
   return (
@@ -28,39 +29,16 @@ export default async function SupportPage() {
         <div className="absolute -left-1/4 top-[-200px] w-1/3 h-[600px] bg-[rgba(235,194,73,0.05)] blur-[60px] rounded-xl" />
       </section>
 
-      {/* Emergency Banner */}
-      {emergencyChannel && (
-        <section className="w-full flex flex-col items-center px-6 pb-24">
-          <div className="max-w-[1280px] w-full bg-[#201f1f] border border-[rgba(235,194,73,0.2)] rounded-[32px] p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 shadow-[0px_10px_30px_0px_rgba(0,0,0,0.5),0px_4px_12px_0px_rgba(235,194,73,0.04)]">
-            <div className="size-20 rounded-2xl bg-[rgba(235,194,73,0.1)] flex items-center justify-center shrink-0">
-              <PhoneIconLarge />
-            </div>
-            <div className="flex flex-col gap-3 flex-1 text-center md:text-left">
-              <span className="mx-auto md:mx-0 w-fit bg-[#ffb4ab] text-[#690005] font-geist font-black text-[10px] tracking-[1px] uppercase px-4 py-1 rounded-xl">
-                In crisis? Start here.
-              </span>
-              <h2 className="font-geist font-black text-3xl md:text-4xl text-[#e5e2e1]">
-                {emergencyChannel.title}
-              </h2>
-              <p className="text-[16px] leading-[26px] text-[rgba(229,226,225,0.6)] max-w-xl">
-                {emergencyChannel.description}
-              </p>
-              <span className="font-geist font-black text-[12px] tracking-[1px] uppercase text-[#ebc249]">
-                {emergencyChannel.availability}
-              </span>
-            </div>
-            <a
-              href={emergencyChannel.href}
-              className="shrink-0 flex items-center justify-center gap-2 px-8 py-[17px] rounded-2xl font-geist font-black text-[18px] text-[#3d2e00] shadow-[0px_10px_15px_-3px_rgba(235,194,73,0.2),0px_4px_6px_-4px_rgba(235,194,73,0.2)]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(135deg, rgb(203, 164, 45) 0%, rgb(166, 133, 37) 100%)",
-              }}
-            >
-              <PhoneIcon />
-              {emergencyChannel.ctaLabel}
-            </a>
-          </div>
+      {/* Emergency Banners */}
+      {emergencyChannels.length > 0 && (
+        <section className="w-full flex flex-col items-center gap-6 px-6 pb-24">
+          {emergencyChannels.map((emergencyChannel, index) => (
+            <EmergencyBanner
+              key={emergencyChannel.id}
+              channel={emergencyChannel}
+              isPrimary={index === 0}
+            />
+          ))}
         </section>
       )}
 
@@ -142,6 +120,49 @@ export default async function SupportPage() {
   );
 }
 
+function EmergencyBanner({
+  channel,
+  isPrimary,
+}: {
+  channel: SupportChannel;
+  isPrimary: boolean;
+}) {
+  return (
+    <div className="max-w-[1280px] w-full bg-[#201f1f] border border-[rgba(235,194,73,0.2)] rounded-[32px] p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 shadow-[0px_10px_30px_0px_rgba(0,0,0,0.5),0px_4px_12px_0px_rgba(235,194,73,0.04)]">
+      <div className="size-20 rounded-2xl bg-[rgba(235,194,73,0.1)] flex items-center justify-center shrink-0">
+        <PhoneIconLarge />
+      </div>
+      <div className="flex flex-col gap-3 flex-1 text-center md:text-left">
+        {isPrimary && (
+          <span className="mx-auto md:mx-0 w-fit bg-[#ffb4ab] text-[#690005] font-geist font-black text-[10px] tracking-[1px] uppercase px-4 py-1 rounded-xl">
+            In crisis? Start here.
+          </span>
+        )}
+        <h2 className="font-geist font-black text-3xl md:text-4xl text-[#e5e2e1]">
+          {channel.title}
+        </h2>
+        <p className="text-[16px] leading-[26px] text-[rgba(229,226,225,0.6)] max-w-xl">
+          {channel.description}
+        </p>
+        <span className="font-geist font-black text-[12px] tracking-[1px] uppercase text-[#ebc249]">
+          {channel.availability}
+        </span>
+      </div>
+      <a
+        href={channel.href}
+        className="shrink-0 flex items-center justify-center gap-2 px-8 py-[17px] rounded-2xl font-geist font-black text-[18px] text-[#3d2e00] shadow-[0px_10px_15px_-3px_rgba(235,194,73,0.2),0px_4px_6px_-4px_rgba(235,194,73,0.2)]"
+        style={{
+          backgroundImage:
+            "linear-gradient(135deg, rgb(203, 164, 45) 0%, rgb(166, 133, 37) 100%)",
+        }}
+      >
+        <PhoneIcon />
+        {channel.ctaLabel}
+      </a>
+    </div>
+  );
+}
+
 function ChannelCard({ channel }: { channel: SupportChannel }) {
   return (
     <div className="flex flex-col gap-4 p-8 rounded-[32px] bg-[#201f1f] border border-[rgba(77,70,53,0.1)] shadow-[0px_10px_30px_0px_rgba(0,0,0,0.5),0px_4px_12px_0px_rgba(235,194,73,0.04)]">
@@ -195,21 +216,6 @@ function ArrowRightIcon({ dark }: { dark?: boolean }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-    </svg>
-  );
-}
-
-function AlertIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M6 1l5 9.5H1L6 1z"
-        stroke="#ffb4ab"
-        strokeWidth="1"
-        strokeLinejoin="round"
-      />
-      <path d="M6 5v2" stroke="#ffb4ab" strokeWidth="1" strokeLinecap="round" />
-      <circle cx="6" cy="8.7" r="0.5" fill="#ffb4ab" />
     </svg>
   );
 }

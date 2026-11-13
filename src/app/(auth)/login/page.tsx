@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/context";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 import { ArrowRightIcon, EyeIcon, EyeOffIcon } from "@/components/auth/icons";
@@ -22,6 +22,22 @@ interface FormErrors {
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Confirmation after `/reset-password` sends the visitor here with
+ * `?reset=success`. Isolated behind its own Suspense boundary so reading the
+ * query string doesn't opt the whole sign-in form out of prerendering.
+ */
+function PasswordResetNotice() {
+  const searchParams = useSearchParams();
+  if (searchParams.get("reset") !== "success") return null;
+
+  return (
+    <p className="text-[13px] text-[#8fce9b]" role="status">
+      Your password has been reset. Sign in with your new password.
+    </p>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -174,6 +190,12 @@ export default function LoginPage() {
                   <p className="px-1 text-[12px] text-[#e08a8a]">{errors.password}</p>
                 )}
               </div>
+
+              {!formError && (
+                <Suspense fallback={null}>
+                  <PasswordResetNotice />
+                </Suspense>
+              )}
 
               {formError && (
                 <p className="text-[13px] text-[#e08a8a]" role="alert">

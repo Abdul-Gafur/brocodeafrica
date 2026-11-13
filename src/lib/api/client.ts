@@ -7,14 +7,44 @@ import { getToken } from "@/lib/auth/session";
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string, options?: { cause?: unknown }) {
-    super(message, options);
+  /** Parsed JSON error body, when the server sent one (e.g. Laravel's 422). */
+  readonly body: unknown;
+
+  constructor(
+    public status: number,
+    message: string,
+    options?: { cause?: unknown; body?: unknown }
+  ) {
+    super(message, options?.cause === undefined ? undefined : { cause: options.cause });
     this.name = "ApiError";
+    this.body = options?.body;
   }
 
   /** True when the request never reached the server (network / CORS failure). */
   get isNetworkError(): boolean {
     return this.status === 0;
+  }
+
+  /** The API's own `message`, if the error body carried one. */
+  get serverMessage(): string | undefined {
+    const body = this.body as { message?: unknown } | null | undefined;
+    return typeof body?.message === "string" && body.message.trim()
+      ? body.message
+      : undefined;
+  }
+
+  /** Laravel validation messages keyed by field name (422 responses). */
+  get fieldErrors(): Record<string, string[]> {
+    const errors = (this.body as { errors?: unknown } | null | undefined)?.errors;
+    if (!errors || typeof errors !== "object") return {};
+
+    const result: Record<string, string[]> = {};
+    for (const [field, messages] of Object.entries(errors)) {
+      if (Array.isArray(messages)) {
+        result[field] = messages.filter((m): m is string => typeof m === "string");
+      }
+    }
+    return result;
   }
 }
 
@@ -55,7 +85,17 @@ export async function apiFetch<T>(path: string, init?: ApiFetchInit): Promise<T>
   }
 
   if (!res.ok) {
-    throw new ApiError(res.status, `Request to ${path} failed with status ${res.status}`);
+    // Keep the JSON body (validation errors, the API's message) so callers can
+    // show the server's reason; a non-JSON body is simply dropped.
+    let body: unknown;
+    try {
+      body = await res.json();
+    } catch {
+      body = undefined;
+    }
+    throw new ApiError(res.status, `Request to ${path} failed with status ${res.status}`, {
+      body,
+    });
   }
 
   return res.json() as Promise<T>;

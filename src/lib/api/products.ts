@@ -1,8 +1,6 @@
+import { cache } from "react";
 import { ProductItem } from "@/lib/types/product";
 import { apiFetch, ApiError } from "@/lib/api/client";
-import { MOCK_PRODUCTS } from "@/lib/data/products";
-import { formatPrice } from "@/lib/format";
-import { productWhatsappUrl } from "@/lib/whatsapp";
 
 /**
  * Real API calls for the Marketplace (3.6).
@@ -12,128 +10,123 @@ import { productWhatsappUrl } from "@/lib/whatsapp";
  *   - coming soon: { data: [], comingSoon: true, message, whatsappNumber }
  * `/products/{slug}` returns { data: ProductItem } or 404 while coming soon.
  *
- * PREVIEW MODE: the client wants the storefront visible now, so while the
- * backend is still in "Coming Soon" mode (or unreachable) we serve the curated
- * catalogue from `src/lib/data/products.ts` and hand every purchase off to
- * WhatsApp, using the client-managed `whatsappNumber` from the API response.
- * Swap this out once the API-backed cart/checkout is built.
+ * COMING SOON GATE: the admin "Coming Soon" switch (`marketplace.coming_soon`)
+ * is honoured everywhere. While it is on the backend withholds the catalogue,
+ * and the storefront shows the Coming Soon page (with the admin's message)
+ * on both the listing and every product URL. Products are only ever shown when
+ * the API itself returns them, so there is no static fallback catalogue.
  *
- * Not cached: the "Coming Soon" toggle is flipped from the admin panel and
- * should take effect immediately.
+ * If the API cannot be reached we do not know whether the shop is open, so we
+ * report the marketplace as "unavailable" rather than guess either way.
+ *
+ * Not cached: the switch is flipped from the admin panel and should take
+ * effect immediately.
  */
 
 interface ProductsIndexResponse {
   data: ProductItem[];
   comingSoon: boolean;
-  message?: string;
+  message?: string | null;
   /** Client-managed WhatsApp checkout number, digits only. */
   whatsappNumber?: string;
 }
 
-/** The static catalogue, each item linked to the WhatsApp hand-off. */
-function buildPreviewProducts(whatsappNumber?: string): ProductItem[] {
-  return MOCK_PRODUCTS.map((product) => ({
-    ...product,
-    whatsappUrl: productWhatsappUrl(
-      product.title,
-      formatPrice(product.price, product.currency),
-      whatsappNumber
-    ),
-  }));
+/** The admin's Coming Soon message, or undefined so the UI uses its default. */
+function comingSoonMessage(res: ProductsIndexResponse): string | undefined {
+  return res.message?.trim() || undefined;
 }
 
-/** Whether the live catalogue is unavailable and we should fall back to preview. */
-function shouldUsePreview(res: ProductsIndexResponse): boolean {
-  return res.comingSoon || res.data.length === 0;
+export type MarketplaceState =
+  | { status: "open"; products: ProductItem[] }
+  | { status: "coming-soon"; message?: string }
+  /** The API could not be reached or errored; the shop state is unknown. */
+  | { status: "unavailable" };
+
+export type ProductPageState =
+  | { status: "open"; product: ProductItem }
+  | { status: "coming-soon"; message?: string }
+  | { status: "not-found" }
+  | { status: "unavailable" };
+
+/**
+ * Server-side log line for a failed marketplace call, so an outage or a wrong
+ * NEXT_PUBLIC_API_BASE_URL shows up in the hosting logs instead of only as a
+ * "Temporarily Unavailable" page. Carries the endpoint and status only: no
+ * visitor data.
+ */
+function logMarketplaceFailure(endpoint: string, error: unknown): void {
+  console.error("[marketplace] API request failed", {
+    endpoint,
+    status: error instanceof ApiError ? error.status : undefined,
+    networkError: error instanceof ApiError ? error.isNetworkError : undefined,
+    error: error instanceof Error ? error.message : String(error),
+  });
+}
+
+async function fetchMarketplace(query = ""): Promise<MarketplaceState> {
+  try {
+    const res = await apiFetch<ProductsIndexResponse>(`/products${query}`, {
+      cache: "no-store",
+    });
+    if (res.comingSoon) {
+      return { status: "coming-soon", message: comingSoonMessage(res) };
+    }
+    return { status: "open", products: res.data ?? [] };
+  } catch (error) {
+    logMarketplaceFailure(`GET /products${query}`, error);
+    return { status: "unavailable" };
+  }
+}
+
+/**
+ * Full marketplace state for the listing page. Wrapped in React `cache` so
+ * `generateMetadata` and the page share one result (and one failure log) per
+ * request.
+ */
+export const getMarketplace = cache(function getMarketplace(): Promise<MarketplaceState> {
+  return fetchMarketplace();
+});
+
+/** Products from the API, or none while the shop is closed or unreachable. */
+export async function getAllProducts(): Promise<ProductItem[]> {
+  const state = await fetchMarketplace();
+  return state.status === "open" ? state.products : [];
 }
 
 export async function getFeaturedProducts(
   limit?: number
 ): Promise<ProductItem[]> {
-  let list: ProductItem[];
-  try {
-    const res = await apiFetch<ProductsIndexResponse>("/products?featured=1", {
-      cache: "no-store",
-    });
-    list = shouldUsePreview(res)
-      ? buildPreviewProducts(res.whatsappNumber).filter((p) => p.featured)
-      : res.data;
-  } catch {
-    list = buildPreviewProducts().filter((p) => p.featured);
-  }
+  const state = await fetchMarketplace("?featured=1");
+  const list = state.status === "open" ? state.products : [];
   return typeof limit === "number" ? list.slice(0, limit) : list;
 }
 
-export async function getProductBySlug(
-  slug: string
-): Promise<ProductItem | undefined> {
+/**
+ * State for a single product URL. The detail endpoint 404s both for unknown
+ * slugs and for every slug while Coming Soon is on, so on a 404 we ask the
+ * index endpoint which of the two it was. Unknown slugs also get the Coming
+ * Soon page while the shop is closed, so nothing about the hidden catalogue
+ * can be inferred from a product URL.
+ */
+export const getProductPage = cache(getProductPageUncached);
+
+async function getProductPageUncached(slug: string): Promise<ProductPageState> {
   try {
     const { data } = await apiFetch<{ data: ProductItem }>(
       `/products/${encodeURIComponent(slug)}`,
       { cache: "no-store" }
     );
-    return data;
+    return { status: "open", product: data };
   } catch (error) {
-    // 404 while coming soon, or the API is down — fall back to the preview
-    // catalogue so the product page still renders. Pull the checkout number
-    // from the index endpoint since the detail 404 carries no body.
-    const fallback = (await getMarketplace()).products.find(
-      (p) => p.slug === slug
-    );
-    if (fallback) {
-      return fallback;
+    if (!(error instanceof ApiError && error.status === 404)) {
+      logMarketplaceFailure("GET /products/{slug}", error);
+      return { status: "unavailable" };
     }
-    if (error instanceof ApiError && error.status === 404) {
-      return undefined;
-    }
-    throw error;
   }
-}
 
-export async function getAllProducts(): Promise<ProductItem[]> {
-  try {
-    const res = await apiFetch<ProductsIndexResponse>("/products", {
-      cache: "no-store",
-    });
-    return shouldUsePreview(res)
-      ? buildPreviewProducts(res.whatsappNumber)
-      : res.data;
-  } catch {
-    return buildPreviewProducts();
+  const gate = await fetchMarketplace("?per_page=1");
+  if (gate.status === "open") {
+    return { status: "not-found" };
   }
-}
-
-export interface MarketplaceState {
-  products: ProductItem[];
-  comingSoon: boolean;
-  message?: string;
-  /** True when the products come from the static preview catalogue. */
-  preview?: boolean;
-}
-
-/**
- * Full marketplace state. The "Coming Soon" gate is intentionally not honoured
- * on the storefront right now: when the API withholds the catalogue we show the
- * preview products instead (see PREVIEW MODE above).
- */
-export async function getMarketplace(): Promise<MarketplaceState> {
-  try {
-    const res = await apiFetch<ProductsIndexResponse>("/products", {
-      cache: "no-store",
-    });
-    if (shouldUsePreview(res)) {
-      return {
-        products: buildPreviewProducts(res.whatsappNumber),
-        comingSoon: false,
-        preview: true,
-      };
-    }
-    return { products: res.data, comingSoon: false };
-  } catch {
-    return {
-      products: buildPreviewProducts(),
-      comingSoon: false,
-      preview: true,
-    };
-  }
+  return gate;
 }
