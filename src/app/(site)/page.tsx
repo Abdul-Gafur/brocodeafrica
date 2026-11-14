@@ -26,17 +26,17 @@ export default async function HomePage() {
         <div className="grid md:grid-cols-2 gap-12 max-w-[1280px] w-full items-center">
           <div className="flex flex-col gap-6 order-2 md:order-1">
             <span className="inline-block w-fit bg-[#2a2a2a] px-4 py-[6px] rounded-xl font-geist font-black text-[10px] tracking-[1px] uppercase text-[#ebc249]">
-              Brocode Digital Sovereign
+              Men&apos;s Health, Growth &amp; Development
             </span>
-            <h1 className="font-geist font-black text-[48px] md:text-[72px] lg:text-[96px] leading-[1] tracking-[-4.8px] text-[#e5e2e1]">
-              Your Future,
+            <h1 className="font-geist font-black text-[44px] md:text-[60px] lg:text-[76px] leading-[1.02] tracking-[-3px] uppercase text-[#e5e2e1]">
+              Building Africa&apos;s
               <br />
-              <span className="font-normal text-[#ebc249]">Your Choice.</span>
+              <span className="font-normal text-[#ebc249]">Leading Voice for Men</span>
             </h1>
             <p className="max-w-[512px] text-[20px] leading-7 text-[rgba(229,226,225,0.7)]">
-              A dedicated digital sanctuary designed for the modern African youth. Access
-              critical SRHR resources, mental wellness support, and financial literacy training
-              in one safe, anonymous space.
+              A dedicated support platform covering men&apos;s mental health, SRHR, financial
+              literacy, and personal growth&mdash;built to nurture healthier, responsible, and
+              empowered young men across Africa.
             </p>
             <div className="flex flex-wrap gap-4 pt-4">
               <Link
@@ -62,19 +62,19 @@ export default async function HomePage() {
             <div className="rotate-2 aspect-[4/5] w-full max-w-[420px] rounded-[32px] border border-[rgba(235,194,73,0.1)] shadow-[0px_25px_50px_-12px_rgba(0,0,0,0.25)] overflow-hidden relative">
               <Image
                 src="/images/community.png"
-                alt="Brocode Africa community"
+                alt="Young African men in conversation"
                 fill
                 sizes="(max-width: 768px) 100vw, 420px"
-                className="object-cover mix-blend-luminosity"
+                className="object-cover grayscale contrast-125 brightness-90"
                 priority
               />
             </div>
             <div className="absolute -bottom-6 -left-5 max-w-[320px] backdrop-blur-md bg-[rgba(42,42,42,0.8)] border border-[rgba(235,194,73,0.3)] rounded-3xl px-8 py-8 pr-16 shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.5),0px_8px_10px_-6px_rgba(0,0,0,0.5)] flex flex-col gap-4">
               <ShieldIcon />
               <p className="font-bold text-[16px] leading-6 text-[#e5e2e1]">
-                100% Anonymous &amp; Secure
+                Safe, Confidential
                 <br />
-                Brocode Space.
+                &amp; Judgment-Free Space.
               </p>
             </div>
           </div>
